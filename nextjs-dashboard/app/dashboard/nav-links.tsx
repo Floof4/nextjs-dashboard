@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import clsx from 'clsx';
+import { usePathname } from 'next/navigation';
 // ...
 
 export default function NavLinks() {
