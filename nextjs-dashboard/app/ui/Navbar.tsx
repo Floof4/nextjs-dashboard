@@ -6,7 +6,7 @@ export default function Navbar() {
         <nav id="navbar">
             <div className="nb-logo">
                 <Link href="/">
-                    <Image src="https://res.cloudinary.com/dvn2qowpg/image/upload/v1777399428/LWS/Logo/Wordmark_Red_pjjmyc.png" alt="Lightweight Solutions" width={150} height={50} />
+                    <Image src="https://res.cloudinary.com/dvn2qowpg/image/upload/v1777399428/LWS/Logo/Wordmark_Red_pjjmyc.png" alt="Lightweight Solutions" width={100} height={100} />
                 </Link>
             </div>
             <div className="nb-links">
