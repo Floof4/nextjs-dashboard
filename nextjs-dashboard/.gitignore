@@ -38,6 +38,7 @@ next-env.d.ts
 /app/query
 /app/seed
 /generated/prisma
+/backup
 
 .vercel
 .env*.local
