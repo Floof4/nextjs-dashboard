@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function FooterCTA() {
     return (
         <div id="footer-cta">
@@ -7,7 +9,7 @@ export default function FooterCTA() {
                 <span className="line-med">Let's simplify</span>
                 <span className="line-blk">TECHNOLOGY</span>
             </h2>
-            <a href="#contact-sec" className="btn btn-primary">BOOK A FREE CONSULTATION</a>
+            <Link href="#contact-sec" className="btn btn-primary">BOOK A FREE CONSULTATION</Link>
         </div>
     );
 }

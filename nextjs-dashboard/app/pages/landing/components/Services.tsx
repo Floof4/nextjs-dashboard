@@ -8,6 +8,7 @@ const CYCLE_MS = 5000;
 export default function Services() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [resetTrigger, setResetTrigger] = useState(0);
 
   // 🔁 Auto cycle
   useEffect(() => {
@@ -17,7 +18,12 @@ export default function Services() {
     }, CYCLE_MS);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [resetTrigger]);
+
+  const handleReset = () => {
+    setActiveIdx(0); // Reset the data
+    setResetTrigger((prev) => prev + 1); // Reset the timer itself
+  };
 
   // ⏱ Progress animation
   useEffect(() => {
@@ -42,7 +48,7 @@ export default function Services() {
     <section id="services">
       <div className="wrap">
         <div className="svc-card">
-          
+
           {/* LEFT SIDE */}
           <div className="svc-left">
             <span className="sec-label">Our services</span>
@@ -59,6 +65,7 @@ export default function Services() {
                     key={i}
                     className={`svc-row ${isActive ? 'active' : ''}`}
                     onClick={() => {
+                      handleReset();
                       setActiveIdx(i);
                       setProgress(0);
                     }}
@@ -79,7 +86,7 @@ export default function Services() {
                     <div className="svc-row-expand">
                       <p className="svc-row-desc">{svc.desc}</p>
                       <a className="svc-row-link" href={svc.href}>
-                        Learn more → 
+                        Learn more →
                       </a>
                     </div>
                   </div>
