@@ -30,7 +30,7 @@ export const loginWithCreds = async (formData: FormData) => {
         email: formData.get("email") as string,
         password: formData.get("password") as string,
         role: "ADMIN",
-        redirectTo: "/",
+        redirectTo: "/pages/landing",
     };
     const existingUser = await getUserByEmail(formData.get("email") as string);
     console.log("Existing user:", existingUser);

@@ -7,7 +7,7 @@ import { prisma } from "@/app/lib/prisma";
 
 export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
-    session: { strategy: "jwt" },
+    session: { strategy: "jwt", maxAge: 60 * 60, updateAge: 60 * 5, },
     providers: [
         Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
