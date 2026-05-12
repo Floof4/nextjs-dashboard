@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import '@/app/ui/auth.css';
 import { loginWithCreds } from "@/actions/auth";
+import { signIn } from "next-auth/react";
 
 export default function Login() {
   return (
@@ -13,7 +14,7 @@ export default function Login() {
           <Image
             className="logo-img"
             src="https://res.cloudinary.com/dvn2qowpg/image/upload/v1777399428/LWS/Logo/Wordmark_white_x04u5n.png"
-            alt="LWS" 
+            alt="LWS"
             width={220}
             height={60}
             unoptimized
@@ -126,17 +127,17 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="divider" style={{ display: "none" }}>
+          <div className="divider">
             <div className="divider-line"></div>
             <span className="divider-txt">or continue with</span>
             <div className="divider-line"></div>
           </div>
 
-          <div className="sso-row" style={{ display: "none" }}>
+          <div className="sso-row">
             <button
               type="button"
               className="btn-sso"
-            
+              onClick={() => signIn("google", {callbackUrl: "/pages/landing"})}
             >
               <svg width="16" height="16" viewBox="0 0 24 24">
                 <path
