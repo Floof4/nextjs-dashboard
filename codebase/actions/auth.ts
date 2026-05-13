@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/app/lib/prisma";
 import { AuthError } from "next-auth";
 import error from "next/error";
+import { redis } from "@/app/lib/redis";
 
 const getUserByEmail = async (email: string) => {
     try {
@@ -20,7 +21,8 @@ const getUserByEmail = async (email: string) => {
     }
 }
 
-export const logout = async () => {
+export const logout = async (userId: string) => {
+    await redis.del(`session:${userId}`);
     await signOut({ redirectTo: "/"});
     revalidatePath("/");
 }

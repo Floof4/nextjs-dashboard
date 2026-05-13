@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/app/auth";
-import { logout } from "@/actions/auth";
+import LogoutButton from "./Logout";
 
 const Navbar = async () => {
     const session = await auth();
@@ -23,17 +23,17 @@ const Navbar = async () => {
                 <div className="nb-icon">
                     {!session?.user ? (
                         <div>
-                        <Link href="pages/sign-in" className="btn btn-secondary">
+                        <Link href="sign-in" className="btn btn-secondary">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                             Sign-in
                         </Link>
                         </div>
                     ) : (
                         <div>
-                        <p>Welcome, {session?.user?.email}!</p>    
-                        <div className="btn btn-secondary" onClick={logout}>
+                        <LogoutButton userId={session?.user?.id!} /> 
+                        <p>Welcome, {session?.user?.email}!</p>   
+                        <div className="btn btn-secondary">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                            Logout
                         </div>
                         </div>
                     )}

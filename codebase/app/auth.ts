@@ -4,10 +4,11 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "@/app/lib/prisma";
+import { redis } from "@/app/lib/redis";
 
 export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
-    session: { strategy: "jwt", maxAge: 60 * 60, updateAge: 60 * 5, },
+    session: { strategy: "jwt" },
     providers: [
         Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
@@ -48,4 +49,47 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
             }
         })
     ],
+    callbacks: {
+        async jwt({ token, user }) {
+
+            // Initial login
+            if (user) {
+                token.id = user.id;
+                token.role = user.role;
+            }
+
+            // Refresh inactivity timeout
+            if (token.id) {
+                await redis.set(
+                    `session:${token.id}`,
+                    JSON.stringify({
+                        id: token.id,
+                        role: token.role,
+                    }),
+                    "EX",
+                    60 * 15 // 15 mins
+                );
+            }
+
+            return token;
+        },
+
+        async session({ session, token }) {
+            console.log("SESSION CHECK", await redis.get(`session:${token.id}`));
+            const cache = await redis.get(
+                `session:${token.id}`
+            );
+
+            // Session expired/revoked
+            if (!cache) {
+                session.user = undefined as any;
+                return session;
+            }
+
+            session.user.id = token.id as string;
+            session.user.role = token.role as string;
+
+            return session;
+        },
+    }
 });

@@ -1,12 +1,19 @@
 'use client';
 
 import Image from "next/image";
-import Link from "next/link";
 import '@/app/ui/auth.css';
-import { loginWithCreds } from "@/actions/auth";
 import { signIn } from "next-auth/react";
+import { SignupForm } from "@/app/pages/sign-in/signup-form";
 
-export default function Login() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: {
+    reason?: string;
+  };
+}) {
+  const params = await searchParams;
+  const isExpired = params?.reason === "expired";
   return (
     <div className="shell">
       <div className="panel-left">
@@ -64,68 +71,12 @@ export default function Login() {
           </div>
 
           <div id="errorBox" className="error-box hidden"></div>
-
-          <form action={loginWithCreds} id="loginForm" autoComplete="on">
-            <div className="field">
-              <label className="label" htmlFor="email">
-                Work Email
-              </label>
-
-              <input
-                className="input"
-                type="email"
-                id="email"
-                name="email"
-                placeholder="you@lightweightsolutions.me"
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="password">
-                Password
-              </label>
-
-              <input
-                className="input"
-                type="password"
-                id="password"
-                name="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
-            </div>
-
-            <div className="row-split">
-              <label className="check-label">
-                <input type="checkbox" defaultChecked />
-                {" "}Keep me signed in
-              </label>
-
-              <Link href="/forgot-password" className="link-red">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" className="btn-primary">
-              Sign In to VERA
-
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
-          </form>
+          {isExpired && (
+                <p>
+                    Your session expired. Please sign in again.
+                </p>
+            )}
+          < SignupForm />
 
           <div className="divider">
             <div className="divider-line"></div>
@@ -137,7 +88,7 @@ export default function Login() {
             <button
               type="button"
               className="btn-sso"
-              onClick={() => signIn("google", {callbackUrl: "/pages/landing"})}
+              onClick={() => signIn("google", { callbackUrl: "/pages/landing" })}
             >
               <svg width="16" height="16" viewBox="0 0 24 24">
                 <path
