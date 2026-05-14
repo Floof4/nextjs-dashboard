@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { SignupForm } from "@/app/pages/sign-in/signup-form";
 
 export default async function Page({
+  
   searchParams,
 }: {
   searchParams?: {
@@ -14,6 +15,7 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const isExpired = params?.reason === "expired";
+  
   return (
     <div className="shell">
       <div className="panel-left">

@@ -6,6 +6,8 @@ import { prisma } from "@/app/lib/prisma";
 import { AuthError } from "next-auth";
 import error from "next/error";
 import { redis } from "@/app/lib/redis";
+import crypto from "crypto";
+import { cookies } from "next/headers";
 
 const getUserByEmail = async (email: string) => {
     try {
@@ -23,7 +25,7 @@ const getUserByEmail = async (email: string) => {
 
 export const logout = async (userId: string) => {
     await redis.del(`session:${userId}`);
-    await signOut({ redirectTo: "/"});
+    await signOut({ redirectTo: "/" });
     revalidatePath("/");
 }
 
@@ -32,13 +34,48 @@ export const loginWithCreds = async (formData: FormData) => {
         email: formData.get("email") as string,
         password: formData.get("password") as string,
         role: "ADMIN",
-        redirectTo: "/pages/landing",
+        redirectTo: "/pages/dashboard",
     };
     const existingUser = await getUserByEmail(formData.get("email") as string);
     console.log("Existing user:", existingUser);
 
     try {
         await signIn("credentials", rawFormData);
+        const remember =
+            formData.get("remember") === "on";
+
+        if (remember) {
+
+            const deviceToken =
+                crypto.randomUUID();
+
+            await redis.set(
+                `trusted:${deviceToken}`,
+                JSON.stringify({
+                    userId: formData.get("userId") as string,
+                }),
+                "EX",
+                    60 * 15 // 15 mins
+            );
+
+            const cookieStore =
+                await cookies();
+
+            cookieStore.set(
+                "trusted_device",
+                deviceToken,
+                {
+                    httpOnly: true,
+                    secure:
+                        process.env.NODE_ENV ===
+                        "production",
+                    sameSite: "lax",
+                    maxAge:
+                        60 * 60 * 24 * 30,
+                    path: "/",
+                }
+            );
+        }
     } catch (error: any) {
         if (error instanceof AuthError) {
             switch (error.type) {
@@ -49,6 +86,6 @@ export const loginWithCreds = async (formData: FormData) => {
                     console.error("An unknown error occurred during sign-in:", error);
             }
         } throw error
-    } 
+    }
     revalidatePath("/");
 }

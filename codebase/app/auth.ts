@@ -5,6 +5,8 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "@/app/lib/prisma";
 import { redis } from "@/app/lib/redis";
+import { headers } from "next/headers";
+import { generateSessionId } from "@/app/lib/session";
 
 export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
@@ -52,22 +54,58 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
     callbacks: {
         async jwt({ token, user }) {
 
-            // Initial login
             if (user) {
+
                 token.id = user.id;
                 token.role = user.role;
-            }
 
-            // Refresh inactivity timeout
-            if (token.id) {
+                const sessionId = generateSessionId();
+
+                token.sessionId = sessionId;
+
+                const headersList = await headers();
+
+                const ipAddress =
+                    headersList.get("x-forwarded-for") ||
+                    "unknown";
+
+                const userAgent =
+                    headersList.get("user-agent") ||
+                    "unknown";
+
+                // LOGIN HISTORY
+                await prisma.loginHistory.create({
+                    data: {
+                        userId: user.id,
+                        ipAddress,
+                        userAgent,
+                    },
+                });
+
+                // ACTIVE SESSION
+                await prisma.activeSession.create({
+                    data: {
+                        userId: user.id,
+                        sessionId,
+                        ipAddress,
+                        userAgent,
+                        expiresAt: new Date(
+                            Date.now() +
+                            1000 * 60 * 15
+                        ),
+                    },
+                });
+
+                // REDIS SESSION
                 await redis.set(
-                    `session:${token.id}`,
+                    `session:${sessionId}`,
                     JSON.stringify({
-                        id: token.id,
-                        role: token.role,
+                        userId: user.id,
+                        role: user.role,
                     }),
                     "EX",
-                    60 * 15 // 15 mins
+                    60 * 15,
+
                 );
             }
 
@@ -75,21 +113,35 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
         },
 
         async session({ session, token }) {
-            console.log("SESSION CHECK", await redis.get(`session:${token.id}`));
-            const cache = await redis.get(
-                `session:${token.id}`
-            );
 
-            // Session expired/revoked
+            const cache =
+                await redis.get(
+                    `session:${token.sessionId}`
+                );
+
+            // revoked / expired
             if (!cache) {
-                session.user = undefined as any;
-                return session;
+
+                await prisma.activeSession.deleteMany({
+                    where: {
+                        sessionId:
+                            token.sessionId as string,
+                    },
+                });
+
+                return null as any;
             }
 
-            session.user.id = token.id as string;
-            session.user.role = token.role as string;
+            session.user.id =
+                token.id as string;
+
+            session.user.role =
+                token.role as string;
+
+            (session as any).sessionId =
+                token.sessionId;
 
             return session;
-        },
+        }
     }
 });

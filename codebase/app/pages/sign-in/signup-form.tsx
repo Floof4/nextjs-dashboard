@@ -38,7 +38,7 @@ export function SignupForm() {
 
             <div className="row-split">
                 <label className="check-label">
-                    <input type="checkbox" defaultChecked />
+                    <input type="checkbox" name="remember" defaultChecked />
                     {" "}Keep me signed in
                 </label>
 

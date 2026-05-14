@@ -19,48 +19,50 @@ generator client {
 // ============================================================================
 
 model User {
-  id                    String     @id @default(cuid())
-  email                 String     @unique
-  emailVerified         DateTime?
-  name                  String?
-  image                 String?
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
 
-  password              String?    // Nullable for OAuth users
-  firstName             String?
-  lastName              String?
-  displayName           String?
-  avatar                String?
-  phone                 String?
-  timezone              String?
-  language              String?    @default("en")
-  status                UserStatus @default(ACTIVE)
-  role                  String?    // Primary role (can have multiple via UserRole)
-  department            String?
-  title                 String?
-  manager               String?    // ManagerId (self-reference)
-  bio                   String?
-  lastLoginAt           DateTime?
-  lastActivityAt        DateTime?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
-  deletedAt             DateTime?
+  password       String? // Nullable for OAuth users
+  firstName      String?
+  lastName       String?
+  displayName    String?
+  avatar         String?
+  phone          String?
+  timezone       String?
+  language       String?    @default("en")
+  status         UserStatus @default(ACTIVE)
+  role           String? // Primary role (can have multiple via UserRole)
+  department     String?
+  title          String?
+  manager        String? // ManagerId (self-reference)
+  bio            String?
+  lastLoginAt    DateTime?
+  lastActivityAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
 
   // Profile customization
-  profileBannerTheme    String     @default("default") // 10 themes
-  profileAccentColor    String     @default("blue") // 8 colors
-  profileBannerUrl      String?
+  profileBannerTheme String  @default("default") // 10 themes
+  profileAccentColor String  @default("blue") // 8 colors
+  profileBannerUrl   String?
 
   // Two-factor
-  totpSecret            String?
-  totpEnabled           Boolean    @default(false)
-  backupCodes           String[]   @default([])
+  totpSecret  String?
+  totpEnabled Boolean  @default(false)
+  backupCodes String[] @default([])
 
   // Relations
-  userRoles             UserRole[]
-  userPermissions       UserPermission[]
-  userAttributes        UserAttribute[]
-  sessions              Session[]
-  accounts              Account[]
+  userRoles       UserRole[]
+  userPermissions UserPermission[]
+  userAttributes  UserAttribute[]
+  sessions        Session[]
+  accounts        Account[]
+  loginHistories  LoginHistory[]
+  activeSessions  ActiveSession[]
 
   @@index([status])
   @@map("users")
@@ -74,36 +76,35 @@ enum UserStatus {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-
 model Session {
-  id                    String     @id @default(cuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionToken          String     @unique
-  expires               DateTime
-  userAgent             String?
-  ipAddress             String?
-  deviceType            String?    // web, mobile, desktop
-  lastActivityAt        DateTime   @default(now())
-  createdAt             DateTime   @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken   String   @unique
+  expires        DateTime
+  userAgent      String?
+  ipAddress      String?
+  deviceType     String? // web, mobile, desktop
+  lastActivityAt DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   @@index([userId])
   @@index([sessionToken])
@@ -118,27 +119,49 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActiveSession {
+  id        String   @id @default(cuid())
+  userId    String
+  sessionId String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // ============================================================================
 // 3. RBAC (ROLE-BASED ACCESS CONTROL)
 // ============================================================================
 
 model Role {
-  id                    String     @id @default(cuid())
-  userId              String
-  name                  String
-  slug                  String
-  description           String?
-  color                 String?
-  isSystem              Boolean    @default(false) // system roles: admin, user, client
-  isCustom              Boolean    @default(false)
-  priority              Int        @default(0) // higher = more permissions
-  metadata              Json?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  slug        String
+  description String?
+  color       String?
+  isSystem    Boolean  @default(false) // system roles: admin, user, client
+  isCustom    Boolean  @default(false)
+  priority    Int      @default(0) // higher = more permissions
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  permissions           RolePermission[]
-  users                 UserRole[]
+  permissions RolePermission[]
+  users       UserRole[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -146,13 +169,13 @@ model Role {
 }
 
 model UserRole {
-  id                    String     @id @default(cuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId                String
-  role                  Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  assignedAt            DateTime   @default(now())
-  expiresAt             DateTime?  // Temporary role assignment
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId     String
+  role       Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime  @default(now())
+  expiresAt  DateTime? // Temporary role assignment
 
   @@unique([userId, roleId])
   @@index([userId])
@@ -161,19 +184,19 @@ model UserRole {
 }
 
 model Permission {
-  id                    String     @id @default(cuid())
-  userId              String
-  name                  String
-  slug                  String
-  description           String?
-  module                String     // hr, finance, projects, crm, etc.
-  action                String     // create, read, update, delete
-  resource              String     // User, Project, Invoice, etc.
-  createdAt             DateTime   @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  slug        String
+  description String?
+  module      String // hr, finance, projects, crm, etc.
+  action      String // create, read, update, delete
+  resource    String // User, Project, Invoice, etc.
+  createdAt   DateTime @default(now())
 
   // Relations
-  roles                 RolePermission[]
-  users                 UserPermission[]
+  roles RolePermission[]
+  users UserPermission[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -182,11 +205,11 @@ model Permission {
 }
 
 model RolePermission {
-  id                    String     @id @default(cuid())
-  roleId                String
-  role                  Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permissionId          String
-  permission            Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -195,13 +218,13 @@ model RolePermission {
 
 // Direct permission override (for specific users)
 model UserPermission {
-  id                    String     @id @default(cuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permissionId          String
-  permission            Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  granted               Boolean    @default(true)
-  expiresAt             DateTime?
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  granted      Boolean    @default(true)
+  expiresAt    DateTime?
 
   @@unique([userId, permissionId])
   @@index([userId])
@@ -213,13 +236,13 @@ model UserPermission {
 // ============================================================================
 
 model UserAttribute {
-  id                    String     @id @default(cuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attributeKey          String
-  attributeValue        String
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attributeKey   String
+  attributeValue String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, attributeKey])
   @@index([userId])
@@ -227,13 +250,13 @@ model UserAttribute {
 }
 
 model ResourceAttribute {
-  id                    String     @id @default(cuid())
-  resourceType          String     // Project, Task, Invoice
-  resourceId            String
-  attributeKey          String
-  attributeValue        String
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id             String   @id @default(cuid())
+  resourceType   String // Project, Task, Invoice
+  resourceId     String
+  attributeKey   String
+  attributeValue String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([resourceType, resourceId, attributeKey])
   @@index([resourceType, resourceId])
@@ -241,20 +264,19 @@ model ResourceAttribute {
 }
 
 model AccessRule {
-  id                    String     @id @default(cuid())
-  tenantId              String
-  name                  String
-  description           String?
-  effect                String     @default("ALLOW") // ALLOW, DENY
-  conditions            Json       // { "department": "sales", "level": { "gte": 3 } }
-  actions               String[]   // ["read", "update"]
-  resources             String[]   // ["Project", "Task"]
-  priority              Int        @default(0)
-  isActive              Boolean    @default(true)
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  effect      String   @default("ALLOW") // ALLOW, DENY
+  conditions  Json // { "department": "sales", "level": { "gte": 3 } }
+  actions     String[] // ["read", "update"]
+  resources   String[] // ["Project", "Task"]
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([tenantId])
   @@map("access_rules")
 }
-
